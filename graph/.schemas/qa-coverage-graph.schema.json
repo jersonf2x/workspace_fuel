@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "qa-coverage-graph.schema.json",
+  "title": "QA Coverage Graph",
+  "description": "Grafo de cobertura QA: pantallas Figma -> scenarios Gherkin -> resultados de ejecucion",
+  "type": "object",
+  "required": ["version", "generatedAt", "nodes", "edges", "summary"],
+  "properties": {
+    "version": { "type": "string" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/definitions/ScreenNode" },
+          { "$ref": "#/definitions/ScenarioNode" },
+          { "$ref": "#/definitions/ResultNode" }
+        ]
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Edge" }
+    },
+    "summary": { "$ref": "#/definitions/Summary" }
+  },
+  "definitions": {
+    "ScreenNode": {
+      "type": "object",
+      "required": ["id", "type", "name"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "const": "screen" },
+        "name": { "type": "string" },
+        "figmaNodeId": { "type": "string" },
+        "module": { "type": "string" },
+        "riskLevel": { "type": "string", "enum": ["high", "medium", "low"] },
+        "coveragePercent": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "ScenarioNode": {
+      "type": "object",
+      "required": ["id", "type", "scenarioName", "module"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "const": "scenario" },
+        "scenarioName": { "type": "string" },
+        "module": { "type": "string" },
+        "featureFile": { "type": "string" },
+        "testType": { "type": "string", "enum": ["positive", "negative", "edge"] },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "hasData": { "type": "boolean" },
+        "figmaNodeId": { "type": "string" }
+      }
+    },
+    "ResultNode": {
+      "type": "object",
+      "required": ["id", "type", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "const": "result" },
+        "status": { "type": "string", "enum": ["passed", "failed", "skipped", "pending"] },
+        "executedAt": { "type": "string", "format": "date-time" },
+        "environment": { "type": "string" },
+        "duration": { "type": "number" },
+        "errorMessage": { "type": "string" }
+      }
+    },
+    "Edge": {
+      "type": "object",
+      "required": ["from", "to", "type"],
+      "properties": {
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["screen_to_scenario", "scenario_to_result", "scenario_to_data"]
+        }
+      }
+    },
+    "Summary": {
+      "type": "object",
+      "properties": {
+        "totalScreens": { "type": "integer" },
+        "totalScenarios": { "type": "integer" },
+        "scenariosWithData": { "type": "integer" },
+        "scenariosWithoutData": { "type": "integer" },
+        "passedScenarios": { "type": "integer" },
+        "failedScenarios": { "type": "integer" },
+        "averageCoveragePercent": { "type": "number" },
+        "criticalPathCoverage": { "type": "number" }
+      }
+    }
+  }
+}

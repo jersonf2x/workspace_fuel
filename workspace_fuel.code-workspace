@@ -1,0 +1,27 @@
+{
+  "folders": [
+    {
+      "name": "backend-customer-account-drivers",
+      "path": "backend-customer-account-drivers"
+    },
+    {
+      "name": "backend-product-fuel-policy-enforcer",
+      "path": "backend-product-fuel-policy-enforcer"
+    },
+    {
+      "name": "frontend-micro-fuel",
+      "path": "frontend-micro-fuel"
+    },
+    {
+      "name": "testing-api-combustiblesB2B",
+      "path": "testing-api-combustiblesB2B"
+    },
+    {
+      "name": "testing-e2e-combustiblesB2B",
+      "path": "testing-e2e-combustiblesB2B"
+    }
+  ],
+  "settings": {
+    "java.compile.nullAnalysis.mode": "disabled"
+  }
+}

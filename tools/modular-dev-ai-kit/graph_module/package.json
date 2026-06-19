@@ -1,0 +1,27 @@
+{
+  "name": "@f2x/semantic-graph-kg",
+  "version": "0.4.0",
+  "private": true,
+  "description": "Semantic Graph Kit — knowledge graph engine. Indexers + queries + JSON schemas for spec/code graphs.",
+  "bin": {
+    "kg-cli": "bin/kg-cli.js"
+  },
+  "main": "lib/_config.js",
+  "files": [
+    "bin",
+    "lib",
+    "scripts",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "kg": "node bin/kg-cli.js",
+    "index:specs": "node lib/spec-indexer.js",
+    "index:code": "bash scripts/build-graph.sh",
+    "preflight": "node lib/preflight.js",
+    "query:flow-order": "node lib/query-flow-order.js",
+    "query:spec-slice": "node lib/query-spec-graph.js"
+  }
+}

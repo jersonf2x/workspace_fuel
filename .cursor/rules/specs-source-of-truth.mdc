@@ -1,0 +1,14 @@
+---
+description: Fuente de verdad spec-first del workspace combustibles
+alwaysApply: true
+---
+
+# Specs como fuente de verdad (workspace coordinador)
+
+- La fuente de verdad funcional del dominio Combustibles es `specs/` de este workspace: specs funcionales `SPEC-FL2-*.md`, índice `specs/README-combustibles.md` y contratos `specs/_api-*.md`.
+- El detalle técnico vive en `specs/` de cada repo hijo (`000X_SPEC_*.md`, prefijos FPE-/CAD-/MFE-), enlazado a la spec funcional vía `refines:` en el front-matter.
+- Toda spec lleva front-matter YAML (id, type, status, repo/repos, refines, depends_on, entities, endpoints, figma). El front-matter es lo que indexa `kg-cli`.
+- Graph-first: antes de búsqueda manual amplia, usar `./tools/kg-cli query spec-slice <ID>`, `query flow-order` y `preflight <ID>`.
+- Tras crear o cambiar specs, reindexar: `./tools/kg-cli index specs`.
+- Si spec y código divergen o falta información, preguntar antes de modificar código; no sustituir specs con suposiciones.
+- Gates: G1 (plan JSON en `runs/` validado + "aprobado") antes de codificar; G2 (prereview + arnés verde) antes de push.

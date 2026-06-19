@@ -1,0 +1,38 @@
+{
+  "workspaceName": "workspace",
+  "specsDir": "specs",
+  "graphDir": "graph",
+  "runsDir": "runs",
+  "graphs": {
+    "code": "graph/flypass-graph.json",
+    "specs": "graph/specs-graph.json"
+  },
+  "specs": {
+    "repoDirs": [],
+    "frontendRepos": []
+  },
+  "domainVocabulary": {
+    "entities": [],
+    "conditions": []
+  },
+  "flow": {
+    "domain": null,
+    "parentEpic": null
+  },
+  "frontend": {
+    "mfeRoot": ".",
+    "shellRoot": null,
+    "mfeAppsDirs": ["apps", "packages"],
+    "shellFeaturesDir": null,
+    "shellUiKitDir": null
+  },
+  "generic": {
+    "backendRoots": ["lambdas", "shared", "schemas", "utils", "src", "backend", "services", "modules", "lib", "server"],
+    "frontendRoots": ["apps", "packages", "src", "app"],
+    "infrastructureRoots": ["infrastructure", "infra"],
+    "companionRoots": ["companion_apps", "scripts"]
+  },
+  "mcp": {
+    "configPath": ".cursor/mcp.json"
+  }
+}

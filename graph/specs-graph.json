@@ -1,0 +1,1223 @@
+{
+  "version": "2.0",
+  "builtAt": "2026-06-17T23:26:57.314Z",
+  "workspace": "workspace_fuel",
+  "domain": "combustibles",
+  "parent": "FL2-25105",
+  "flowReadme": "README-combustibles.md",
+  "summary": {
+    "specs": 17,
+    "byType": {
+      "context": 5,
+      "functional": 2,
+      "technical": 10
+    },
+    "byRepo": {
+      "(workspace)": 3,
+      "backend-product-fuel-policy-enforcer": 10,
+      "backend-customer-account-drivers": 2,
+      "frontend-micro-fuel": 2
+    },
+    "byStatus": {
+      "approved": 12,
+      "implemented": 1,
+      "draft": 4
+    },
+    "flows": [
+      {
+        "key": "b2c-supply-completed",
+        "specs": 4
+      },
+      {
+        "key": "b2c-supply-in-progress",
+        "specs": 3
+      },
+      {
+        "key": "b2b",
+        "specs": 7
+      }
+    ],
+    "specsWithoutFlow": [
+      "SPEC-FL2-24307",
+      "FPE-0003",
+      "0008_SPEC_fpe_full_tank_per_station"
+    ],
+    "edges": 37,
+    "byEdgeType": {
+      "refines": 3,
+      "depends_on": 2,
+      "shares_entity": 25,
+      "shares_endpoint": 6,
+      "shares_component": 1
+    },
+    "figmaStatus": {
+      "missing": 2,
+      "n/a": 13,
+      "ok": 2
+    },
+    "specsWithFigmaIssues": [
+      "CTX-COMBUSTIBLES",
+      "MFE-0000"
+    ],
+    "withoutFrontMatter": [
+      "0008_SPEC_fpe_full_tank_per_station"
+    ],
+    "warnings": [],
+    "files": [
+      "specs/0000_SPEC_contexto_dominio_combustibles.md",
+      "specs/SPEC-FL2-24307-config-punto-atencion.md",
+      "specs/SPEC-FL2-25105-cupo-diario-politica-combustible.md",
+      "backend-product-fuel-policy-enforcer/specs/0000_SPEC_project_context.md",
+      "backend-product-fuel-policy-enforcer/specs/0001_spec_fuel_dispenser_qr.md",
+      "backend-product-fuel-policy-enforcer/specs/0002_spec_full_authorize_preauth_flow.md",
+      "backend-product-fuel-policy-enforcer/specs/0003_spec_FL2_24307.md",
+      "backend-product-fuel-policy-enforcer/specs/0004_spec_outbox_table.md",
+      "backend-product-fuel-policy-enforcer/specs/0005_SPEC_hexagonal_modules.md",
+      "backend-product-fuel-policy-enforcer/specs/0006_SPEC_fuel_transaction_report_table.md",
+      "backend-product-fuel-policy-enforcer/specs/0007_SPEC_transaction_config_and_policy_daily_limit.md",
+      "backend-product-fuel-policy-enforcer/specs/0008_SPEC_FL2_25105_cupo_diario.md",
+      "backend-product-fuel-policy-enforcer/specs/0008_SPEC_fpe_full_tank_per_station.md",
+      "backend-customer-account-drivers/specs/0000_SPEC_project_context.md",
+      "backend-customer-account-drivers/specs/0001_SPEC_outbox_table.md",
+      "frontend-micro-fuel/specs/0000_SPEC_project_context.md",
+      "frontend-micro-fuel/specs/0001_SPEC_FL2_25105_politica_ui.md"
+    ]
+  },
+  "contracts": [
+    "specs/_api-drivers.md",
+    "specs/_api-fuel-policy.md"
+  ],
+  "flows": [
+    {
+      "key": "b2c-supply-completed",
+      "name": "Flujo B2C — suministro ya completado",
+      "summary": "El usuario escanea el QR cuando el combustible ya fue despachado sin Flypass (hoseStatus SUPPLY_COMPLETED) y paga el valor exacto al final. FPE hace autorización completa (preautoriza y autoriza en un solo paso) vía POST /api/v1/full-fuel-authorizations (FullAuthorizeTransactionUseCase).",
+      "states": "CREATED -> PREAUTHORIZED -> AUTHORIZED -> AUTHORIZED_PROVIDER_CONFIRMED",
+      "entities": [
+        "fuelTransaction",
+        "fuelAuthorization",
+        "fuelDispenser",
+        "station"
+      ],
+      "notes": "El POS Distracom confirma por fallback con PUT /fuel-authorizations/confirm porque no hay preautorización pendiente sino autorización directa.",
+      "definedIn": "CTX-COMBUSTIBLES",
+      "specs": [
+        "FPE-0001",
+        "FPE-0002",
+        "FPE-0004",
+        "FPE-0006"
+      ]
+    },
+    {
+      "key": "b2c-supply-in-progress",
+      "name": "Flujo B2C — suministro en proceso",
+      "summary": "El usuario escanea el QR mientras se despacha (hoseStatus SUPPLY_ON_PROGRESS). Como el valor final no se conoce, FPE preautoriza (POST /fuel-transactions, CreateFuelTransactionUseCase) y el POS confirma y autoriza el pago real al terminar (PUT /fuel-transactions/confirm y PUT /fuel-authorizations).",
+      "states": "CREATED -> PREAUTHORIZED -> PREAUTHORIZED_SENT_PROVIDER -> AUTHORIZED -> AUTHORIZED_PROVIDER_CONFIRMED",
+      "entities": [
+        "fuelTransaction",
+        "fuelAuthorization",
+        "fuelDispenser",
+        "station"
+      ],
+      "notes": "La preautorización con validación por saldo insuficiente es un resultado válido en este flujo (responde 200 OK y continúa). El flujo de configuración antes del despacho (IDLE) comparte la misma mecánica.",
+      "definedIn": "CTX-COMBUSTIBLES",
+      "specs": [
+        "FPE-0001",
+        "FPE-0004",
+        "FPE-0006"
+      ]
+    },
+    {
+      "key": "b2b",
+      "name": "Flujo B2B — política por placa",
+      "summary": "No inicia por QR de la app sino por el POS del proveedor (POST /fuel-authorizations, CreateFuelTransactionOnProcessUseCase). Está gobernado por una política de combustible (FuelPolicy) por placa, estación y cuenta/subcuenta, con autenticación PUSH_TOTP al conductor.",
+      "states": "ON_PROCESS -> PREAUTHORIZED -> AUTHORIZED -> AUTHORIZED_PROVIDER_CONFIRMED",
+      "entities": [
+        "fuelPolicy",
+        "plate",
+        "driver",
+        "fuelTransaction",
+        "attentionPoint"
+      ],
+      "notes": "Relación con conductores — la política está asociada a una placa, y la placa está asociada a un conductor (repo backend-customer-account-drivers, PlateOwnerClientPort). El código TOTP se envía al conductor.",
+      "definedIn": "CTX-COMBUSTIBLES",
+      "specs": [
+        "SPEC-FL2-25105",
+        "FPE-0004",
+        "FPE-0006",
+        "FPE-0007",
+        "FPE-0008",
+        "CAD-0001",
+        "MFE-0001"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "CTX-COMBUSTIBLES",
+      "file": "specs/0000_SPEC_contexto_dominio_combustibles.md",
+      "title": "Contexto de dominio combustibles — flujos B2C/B2B y relación con conductores",
+      "type": "context",
+      "status": "approved",
+      "jira": null,
+      "repo": null,
+      "repos": [
+        "backend-product-fuel-policy-enforcer",
+        "backend-customer-account-drivers",
+        "frontend-micro-fuel"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [],
+      "flowDefinitions": [
+        {
+          "key": "b2c-supply-completed",
+          "name": "Flujo B2C — suministro ya completado",
+          "summary": "El usuario escanea el QR cuando el combustible ya fue despachado sin Flypass (hoseStatus SUPPLY_COMPLETED) y paga el valor exacto al final. FPE hace autorización completa (preautoriza y autoriza en un solo paso) vía POST /api/v1/full-fuel-authorizations (FullAuthorizeTransactionUseCase).",
+          "states": "CREATED -> PREAUTHORIZED -> AUTHORIZED -> AUTHORIZED_PROVIDER_CONFIRMED",
+          "entities": [
+            "fuelTransaction",
+            "fuelAuthorization",
+            "fuelDispenser",
+            "station"
+          ],
+          "notes": "El POS Distracom confirma por fallback con PUT /fuel-authorizations/confirm porque no hay preautorización pendiente sino autorización directa."
+        },
+        {
+          "key": "b2c-supply-in-progress",
+          "name": "Flujo B2C — suministro en proceso",
+          "summary": "El usuario escanea el QR mientras se despacha (hoseStatus SUPPLY_ON_PROGRESS). Como el valor final no se conoce, FPE preautoriza (POST /fuel-transactions, CreateFuelTransactionUseCase) y el POS confirma y autoriza el pago real al terminar (PUT /fuel-transactions/confirm y PUT /fuel-authorizations).",
+          "states": "CREATED -> PREAUTHORIZED -> PREAUTHORIZED_SENT_PROVIDER -> AUTHORIZED -> AUTHORIZED_PROVIDER_CONFIRMED",
+          "entities": [
+            "fuelTransaction",
+            "fuelAuthorization",
+            "fuelDispenser",
+            "station"
+          ],
+          "notes": "La preautorización con validación por saldo insuficiente es un resultado válido en este flujo (responde 200 OK y continúa). El flujo de configuración antes del despacho (IDLE) comparte la misma mecánica."
+        },
+        {
+          "key": "b2b",
+          "name": "Flujo B2B — política por placa",
+          "summary": "No inicia por QR de la app sino por el POS del proveedor (POST /fuel-authorizations, CreateFuelTransactionOnProcessUseCase). Está gobernado por una política de combustible (FuelPolicy) por placa, estación y cuenta/subcuenta, con autenticación PUSH_TOTP al conductor.",
+          "states": "ON_PROCESS -> PREAUTHORIZED -> AUTHORIZED -> AUTHORIZED_PROVIDER_CONFIRMED",
+          "entities": [
+            "fuelPolicy",
+            "plate",
+            "driver",
+            "fuelTransaction",
+            "attentionPoint"
+          ],
+          "notes": "Relación con conductores — la política está asociada a una placa, y la placa está asociada a un conductor (repo backend-customer-account-drivers, PlateOwnerClientPort). El código TOTP se envía al conductor."
+        }
+      ],
+      "entities": [
+        "fuelPolicy",
+        "outbox"
+      ],
+      "endpoints": [
+        "GET /fuel-dispensers",
+        "POST /api/v1/full-fuel-authorizations",
+        "PUT /fuel-transactions/:confirm",
+        "PUT /fuel-authorizations/:confirm",
+        "POST /fuel-transactions",
+        "PUT /fuel-authorizations",
+        "POST /fuel-authorizations",
+        "POST /fuel-authorizations/:approve",
+        "GET /api/v1/plates/{licensePlate}/drivers/validate"
+      ],
+      "components": [],
+      "conditions": [
+        "kafka_event",
+        "qr_flow",
+        "daily_limit"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "missing",
+      "figmaWarnings": [
+        "Spec con UI sin Figma URL. Pedir node-id a diseño antes de implementar (bloqueante UI)."
+      ],
+      "requiresUi": true,
+      "acceptanceCount": 0,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "SPEC-FL2-24307",
+      "file": "specs/SPEC-FL2-24307-config-punto-atencion.md",
+      "title": "Configuración por ambiente y autenticación dual en creación de punto de atención",
+      "type": "functional",
+      "status": "approved",
+      "jira": "FL2-24307",
+      "repo": null,
+      "repos": [
+        "backend-product-fuel-policy-enforcer"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [],
+      "flowDefinitions": [],
+      "entities": [
+        "attentionPoint"
+      ],
+      "endpoints": [],
+      "components": [],
+      "conditions": [],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 2,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "SPEC-FL2-25105",
+      "file": "specs/SPEC-FL2-25105-cupo-diario-politica-combustible.md",
+      "title": "Configuración de la Restricción de la Política de Combustible (cupo diario)",
+      "type": "functional",
+      "status": "implemented",
+      "jira": "FL2-25105",
+      "repo": null,
+      "repos": [
+        "backend-product-fuel-policy-enforcer",
+        "frontend-micro-fuel",
+        "testing-api-combustiblesB2B"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [
+        "b2b"
+      ],
+      "flowDefinitions": [],
+      "entities": [
+        "fuelPolicy",
+        "fuelTransaction"
+      ],
+      "endpoints": [
+        "POST /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies",
+        "PUT /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies/{id}",
+        "POST /fuel-transactions (preauth B2B)"
+      ],
+      "components": [
+        "create-policy-modal",
+        "policy-list"
+      ],
+      "conditions": [
+        "full_tank_tooltip",
+        "cupo_diario_rolling_24h",
+        "cap_transaction_max",
+        "daily_limit"
+      ],
+      "figmaUrls": [
+        {
+          "url": "https://www.figma.com/design/8BIdGkjwyY2pQ7dBLwZERF/%F0%9F%9F%A0-%7C-%F0%9F%9B%A2-Estaciones-de-servicio?node-id=10174-62543&t=VEEvRe9Ugy9rT5Dv-0",
+          "nodeId": "10174-62543",
+          "mode": "dev"
+        }
+      ],
+      "figmaStatus": "ok",
+      "figmaWarnings": [],
+      "requiresUi": true,
+      "acceptanceCount": 11,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "FPE-0000",
+      "file": "backend-product-fuel-policy-enforcer/specs/0000_SPEC_project_context.md",
+      "title": "Contexto base del proyecto FPE",
+      "type": "context",
+      "status": "approved",
+      "jira": null,
+      "repo": "backend-product-fuel-policy-enforcer",
+      "repos": [
+        "backend-product-fuel-policy-enforcer"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [],
+      "flowDefinitions": [],
+      "entities": [
+        "fuelTransaction",
+        "fuelAuthorization",
+        "fuelPolicy",
+        "station",
+        "flykey"
+      ],
+      "endpoints": [
+        "PUT /fuel-authorizations/:confirm",
+        "PUT /fuel-transactions/:confirm",
+        "PUT /fuel-authorizations",
+        "GET /fuel-dispensers",
+        "POST /api/v1/full-fuel-authorizations",
+        "POST /fuel-transactions",
+        "POST /api/v1/payment-authorization",
+        "POST /fuel-authorizations",
+        "POST /fuel-authorizations/:approve",
+        "GET /fuel-transactions/ticket"
+      ],
+      "components": [],
+      "conditions": [
+        "kafka_event",
+        "retry_resilience",
+        "idempotency",
+        "qr_flow",
+        "daily_limit"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 0,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "FPE-0001",
+      "file": "backend-product-fuel-policy-enforcer/specs/0001_spec_fuel_dispenser_qr.md",
+      "title": "Resolución de tipo de combustible en QR de dispensador por catálogo provider_fuel_type",
+      "type": "technical",
+      "status": "approved",
+      "jira": null,
+      "repo": "backend-product-fuel-policy-enforcer",
+      "repos": [
+        "backend-product-fuel-policy-enforcer"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [
+        "b2c-supply-completed",
+        "b2c-supply-in-progress"
+      ],
+      "flowDefinitions": [],
+      "entities": [],
+      "endpoints": [
+        "POST /api/v1/fuel-dispensers/qr",
+        "POST /product-fuel-policy-enforcer/api/v1/fuel-dispensers/qr"
+      ],
+      "components": [],
+      "conditions": [
+        "qr_flow"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 0,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "FPE-0002",
+      "file": "backend-product-fuel-policy-enforcer/specs/0002_spec_full_authorize_preauth_flow.md",
+      "title": "Separar preautorización y autorización real en FullAuthorizeTransactionUseCase (evitar pagos dobles)",
+      "type": "technical",
+      "status": "approved",
+      "jira": null,
+      "repo": "backend-product-fuel-policy-enforcer",
+      "repos": [
+        "backend-product-fuel-policy-enforcer"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [
+        "b2c-supply-completed"
+      ],
+      "flowDefinitions": [],
+      "entities": [
+        "fuelTransaction",
+        "fuelAuthorization"
+      ],
+      "endpoints": [
+        "POST /api/v1/full-fuel-authorizations"
+      ],
+      "components": [],
+      "conditions": [
+        "retry_resilience",
+        "idempotency"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 0,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "FPE-0003",
+      "file": "backend-product-fuel-policy-enforcer/specs/0003_spec_FL2_24307.md",
+      "title": "Ajustes de configuración en creación de punto de atención",
+      "type": "technical",
+      "status": "approved",
+      "jira": "FL2-24307",
+      "repo": "backend-product-fuel-policy-enforcer",
+      "repos": [
+        "backend-product-fuel-policy-enforcer"
+      ],
+      "refines": [
+        "SPEC-FL2-24307"
+      ],
+      "dependsOn": [],
+      "flows": [],
+      "flowDefinitions": [],
+      "entities": [],
+      "endpoints": [],
+      "components": [],
+      "conditions": [],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 0,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "FPE-0004",
+      "file": "backend-product-fuel-policy-enforcer/specs/0004_spec_outbox_table.md",
+      "title": "Patrón Transactional Outbox para eventos de confirmación de transacciones",
+      "type": "technical",
+      "status": "approved",
+      "jira": null,
+      "repo": "backend-product-fuel-policy-enforcer",
+      "repos": [
+        "backend-product-fuel-policy-enforcer"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [
+        "b2c-supply-completed",
+        "b2c-supply-in-progress",
+        "b2b"
+      ],
+      "flowDefinitions": [],
+      "entities": [
+        "fuelTransaction",
+        "outbox"
+      ],
+      "endpoints": [
+        "POST /api/v1/full-fuel-authorizations",
+        "PUT /fuel-authorizations",
+        "PUT /fuel-authorizations/:confirm",
+        "PUT /fuel-transactions/:confirm"
+      ],
+      "components": [],
+      "conditions": [
+        "kafka_event",
+        "retry_resilience",
+        "idempotency"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 0,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "FPE-0005",
+      "file": "backend-product-fuel-policy-enforcer/specs/0005_SPEC_hexagonal_modules.md",
+      "title": "Estructura hexagonal de los módulos fpe.product y legal",
+      "type": "context",
+      "status": "approved",
+      "jira": null,
+      "repo": "backend-product-fuel-policy-enforcer",
+      "repos": [
+        "backend-product-fuel-policy-enforcer"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [],
+      "flowDefinitions": [],
+      "entities": [],
+      "endpoints": [],
+      "components": [],
+      "conditions": [
+        "kafka_event",
+        "qr_flow"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 0,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "FPE-0006",
+      "file": "backend-product-fuel-policy-enforcer/specs/0006_SPEC_fuel_transaction_report_table.md",
+      "title": "Tabla de lectura fuel_transaction_report alimentada por evento FuelTransactionConfirmed",
+      "type": "technical",
+      "status": "approved",
+      "jira": null,
+      "repo": "backend-product-fuel-policy-enforcer",
+      "repos": [
+        "backend-product-fuel-policy-enforcer"
+      ],
+      "refines": [],
+      "dependsOn": [
+        "FPE-0004"
+      ],
+      "flows": [
+        "b2c-supply-completed",
+        "b2c-supply-in-progress",
+        "b2b"
+      ],
+      "flowDefinitions": [],
+      "entities": [
+        "fuelTransaction",
+        "station",
+        "attentionPoint",
+        "driver",
+        "outbox"
+      ],
+      "endpoints": [
+        "GET /api/v1/accounts/{accountId}/subaccounts/{subaccountId}/fuel-transactions/report",
+        "GET /customer-account-drivers/api/v1/accounts/{accountId}/subaccounts/{subaccountId}/drivers/information"
+      ],
+      "components": [],
+      "conditions": [
+        "pagination",
+        "kafka_event",
+        "retry_resilience",
+        "idempotency"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 0,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "FPE-0007",
+      "file": "backend-product-fuel-policy-enforcer/specs/0007_SPEC_transaction_config_and_policy_daily_limit.md",
+      "title": "Ajustes de configuración de transacción y límite diario de política",
+      "type": "technical",
+      "status": "approved",
+      "jira": null,
+      "repo": "backend-product-fuel-policy-enforcer",
+      "repos": [
+        "backend-product-fuel-policy-enforcer"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [
+        "b2b"
+      ],
+      "flowDefinitions": [],
+      "entities": [
+        "fuelPolicy",
+        "fuelTransaction",
+        "outbox"
+      ],
+      "endpoints": [
+        "PUT /fuel-authorizations"
+      ],
+      "components": [],
+      "conditions": [
+        "kafka_event",
+        "idempotency",
+        "daily_limit"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 7,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "FPE-0008",
+      "file": "backend-product-fuel-policy-enforcer/specs/0008_SPEC_FL2_25105_cupo_diario.md",
+      "title": "Cupo diario rolling 24h por política — eliminación dailyRestriction",
+      "type": "technical",
+      "status": "draft",
+      "jira": "FL2-25105",
+      "repo": "backend-product-fuel-policy-enforcer",
+      "repos": [
+        "backend-product-fuel-policy-enforcer"
+      ],
+      "refines": [
+        "SPEC-FL2-25105"
+      ],
+      "dependsOn": [
+        "FPE-0007"
+      ],
+      "flows": [
+        "b2b"
+      ],
+      "flowDefinitions": [],
+      "entities": [
+        "fuelPolicy",
+        "fuelTransaction",
+        "station"
+      ],
+      "endpoints": [
+        "POST /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies",
+        "PUT /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies/{id}",
+        "POST /fuel-transactions (preauth B2B — CreateFuelTransactionOnProcessUseCase)"
+      ],
+      "components": [],
+      "conditions": [
+        "rolling_24h_window",
+        "full_tank_once_per_day",
+        "cap_transaction_max",
+        "daily_limit"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 7,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "0008_SPEC_fpe_full_tank_per_station",
+      "file": "backend-product-fuel-policy-enforcer/specs/0008_SPEC_fpe_full_tank_per_station.md",
+      "title": "0008_SPEC_fpe_full_tank_per_station",
+      "type": "technical",
+      "status": "draft",
+      "jira": null,
+      "repo": "backend-product-fuel-policy-enforcer",
+      "repos": [
+        "backend-product-fuel-policy-enforcer"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [],
+      "flowDefinitions": [],
+      "entities": [
+        "fuelDispenser",
+        "station",
+        "attentionPoint"
+      ],
+      "endpoints": [
+        "POST /api/v1/fuel-dispensers/qr",
+        "POST /api/v1/fuel-authorizations",
+        "POST /api/v1/attention-points/stations"
+      ],
+      "components": [],
+      "conditions": [
+        "qr_flow"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 0,
+      "hasFrontMatter": false
+    },
+    {
+      "id": "CAD-0000",
+      "file": "backend-customer-account-drivers/specs/0000_SPEC_project_context.md",
+      "title": "Contexto base del proyecto customer-account-drivers",
+      "type": "context",
+      "status": "approved",
+      "jira": null,
+      "repo": "backend-customer-account-drivers",
+      "repos": [
+        "backend-customer-account-drivers"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [],
+      "flowDefinitions": [],
+      "entities": [
+        "driver"
+      ],
+      "endpoints": [
+        "GET /api/v1/plates/{licensePlate}/drivers/validate"
+      ],
+      "components": [],
+      "conditions": [
+        "kafka_event",
+        "retry_resilience"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 0,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "CAD-0001",
+      "file": "backend-customer-account-drivers/specs/0001_SPEC_outbox_table.md",
+      "title": "Patrón Transactional Outbox en customer-account-drivers",
+      "type": "technical",
+      "status": "approved",
+      "jira": null,
+      "repo": "backend-customer-account-drivers",
+      "repos": [
+        "backend-customer-account-drivers"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [
+        "b2b"
+      ],
+      "flowDefinitions": [],
+      "entities": [
+        "driver",
+        "outbox"
+      ],
+      "endpoints": [],
+      "components": [],
+      "conditions": [
+        "kafka_event",
+        "retry_resilience"
+      ],
+      "figmaUrls": [],
+      "figmaStatus": "n/a",
+      "figmaWarnings": [],
+      "requiresUi": false,
+      "acceptanceCount": 0,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "MFE-0000",
+      "file": "frontend-micro-fuel/specs/0000_SPEC_project_context.md",
+      "title": "Contexto base del frontend frontend-micro-fuel",
+      "type": "context",
+      "status": "draft",
+      "jira": null,
+      "repo": "frontend-micro-fuel",
+      "repos": [
+        "frontend-micro-fuel"
+      ],
+      "refines": [],
+      "dependsOn": [],
+      "flows": [],
+      "flowDefinitions": [],
+      "entities": [
+        "driver"
+      ],
+      "endpoints": [],
+      "components": [],
+      "conditions": [],
+      "figmaUrls": [],
+      "figmaStatus": "missing",
+      "figmaWarnings": [
+        "Spec con UI sin Figma URL. Pedir node-id a diseño antes de implementar (bloqueante UI)."
+      ],
+      "requiresUi": true,
+      "acceptanceCount": 0,
+      "hasFrontMatter": true
+    },
+    {
+      "id": "MFE-0001",
+      "file": "frontend-micro-fuel/specs/0001_SPEC_FL2_25105_politica_ui.md",
+      "title": "UI — Eliminar restricción diaria y tooltip tanque lleno en política combustible",
+      "type": "technical",
+      "status": "draft",
+      "jira": "FL2-25105",
+      "repo": "frontend-micro-fuel",
+      "repos": [
+        "frontend-micro-fuel"
+      ],
+      "refines": [
+        "SPEC-FL2-25105"
+      ],
+      "dependsOn": [],
+      "flows": [
+        "b2b"
+      ],
+      "flowDefinitions": [],
+      "entities": [
+        "fuelPolicy"
+      ],
+      "endpoints": [
+        "POST /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies",
+        "PUT /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies/{id}",
+        "GET /fuel-policies",
+        "GET /fuel-policies/:id",
+        "POST /fuel-policies",
+        "PUT /fuel-policies/:id"
+      ],
+      "components": [
+        "create-policy-modal",
+        "policy-list",
+        "pp-col",
+        "pp-icon",
+        "pp-input",
+        "pp-popover",
+        "pp-row",
+        "pp-switch",
+        "pp-text",
+        "pp-tooltip"
+      ],
+      "conditions": [
+        "full_tank_tooltip",
+        "remove_restriction_field"
+      ],
+      "figmaUrls": [
+        {
+          "url": "https://www.figma.com/design/8BIdGkjwyY2pQ7dBLwZERF/%F0%9F%9F%A0-%7C-%F0%9F%9B%A2-Estaciones-de-servicio?node-id=10174-62543&t=VEEvRe9Ugy9rT5Dv-0",
+          "nodeId": "10174-62543",
+          "mode": "dev"
+        }
+      ],
+      "figmaStatus": "ok",
+      "figmaWarnings": [],
+      "requiresUi": true,
+      "acceptanceCount": 14,
+      "hasFrontMatter": true
+    }
+  ],
+  "edges": [
+    {
+      "from": "FPE-0003",
+      "to": "SPEC-FL2-24307",
+      "type": "refines"
+    },
+    {
+      "from": "FPE-0006",
+      "to": "FPE-0004",
+      "type": "depends_on"
+    },
+    {
+      "from": "FPE-0008",
+      "to": "FPE-0007",
+      "type": "depends_on"
+    },
+    {
+      "from": "FPE-0008",
+      "to": "SPEC-FL2-25105",
+      "type": "refines"
+    },
+    {
+      "from": "MFE-0001",
+      "to": "SPEC-FL2-25105",
+      "type": "refines"
+    },
+    {
+      "from": "SPEC-FL2-24307",
+      "to": "FPE-0006",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "attentionPoint"
+        ]
+      }
+    },
+    {
+      "from": "SPEC-FL2-24307",
+      "to": "0008_SPEC_fpe_full_tank_per_station",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "attentionPoint"
+        ]
+      }
+    },
+    {
+      "from": "SPEC-FL2-25105",
+      "to": "FPE-0002",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction"
+        ]
+      }
+    },
+    {
+      "from": "SPEC-FL2-25105",
+      "to": "FPE-0004",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction"
+        ]
+      }
+    },
+    {
+      "from": "SPEC-FL2-25105",
+      "to": "FPE-0006",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction"
+        ]
+      }
+    },
+    {
+      "from": "SPEC-FL2-25105",
+      "to": "FPE-0007",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelPolicy",
+          "fuelTransaction"
+        ]
+      }
+    },
+    {
+      "from": "SPEC-FL2-25105",
+      "to": "FPE-0008",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelPolicy",
+          "fuelTransaction"
+        ]
+      }
+    },
+    {
+      "from": "SPEC-FL2-25105",
+      "to": "FPE-0008",
+      "type": "shares_endpoint",
+      "attrs": {
+        "endpoints": [
+          "POST /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies",
+          "PUT /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies/{id}"
+        ]
+      }
+    },
+    {
+      "from": "SPEC-FL2-25105",
+      "to": "MFE-0001",
+      "type": "shares_component",
+      "attrs": {
+        "components": [
+          "create-policy-modal",
+          "policy-list"
+        ]
+      }
+    },
+    {
+      "from": "SPEC-FL2-25105",
+      "to": "MFE-0001",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelPolicy"
+        ]
+      }
+    },
+    {
+      "from": "SPEC-FL2-25105",
+      "to": "MFE-0001",
+      "type": "shares_endpoint",
+      "attrs": {
+        "endpoints": [
+          "POST /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies",
+          "PUT /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies/{id}"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0001",
+      "to": "0008_SPEC_fpe_full_tank_per_station",
+      "type": "shares_endpoint",
+      "attrs": {
+        "endpoints": [
+          "POST /api/v1/fuel-dispensers/qr"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0002",
+      "to": "FPE-0004",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0002",
+      "to": "FPE-0004",
+      "type": "shares_endpoint",
+      "attrs": {
+        "endpoints": [
+          "POST /api/v1/full-fuel-authorizations"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0002",
+      "to": "FPE-0006",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0002",
+      "to": "FPE-0007",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0002",
+      "to": "FPE-0008",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0004",
+      "to": "FPE-0006",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction",
+          "outbox"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0004",
+      "to": "FPE-0007",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction",
+          "outbox"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0004",
+      "to": "FPE-0007",
+      "type": "shares_endpoint",
+      "attrs": {
+        "endpoints": [
+          "PUT /fuel-authorizations"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0004",
+      "to": "FPE-0008",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0004",
+      "to": "CAD-0001",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "outbox"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0006",
+      "to": "FPE-0007",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction",
+          "outbox"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0006",
+      "to": "FPE-0008",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelTransaction",
+          "station"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0006",
+      "to": "0008_SPEC_fpe_full_tank_per_station",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "station",
+          "attentionPoint"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0006",
+      "to": "CAD-0001",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "driver",
+          "outbox"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0007",
+      "to": "FPE-0008",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelPolicy",
+          "fuelTransaction"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0007",
+      "to": "CAD-0001",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "outbox"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0007",
+      "to": "MFE-0001",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelPolicy"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0008",
+      "to": "0008_SPEC_fpe_full_tank_per_station",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "station"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0008",
+      "to": "MFE-0001",
+      "type": "shares_entity",
+      "attrs": {
+        "entities": [
+          "fuelPolicy"
+        ]
+      }
+    },
+    {
+      "from": "FPE-0008",
+      "to": "MFE-0001",
+      "type": "shares_endpoint",
+      "attrs": {
+        "endpoints": [
+          "POST /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies",
+          "PUT /api/v1/accounts/{accountId}/subaccounts/{subAccountId}/fuel-policies/{id}"
+        ]
+      }
+    }
+  ]
+}

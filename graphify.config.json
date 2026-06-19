@@ -1,0 +1,93 @@
+{
+  "workspaceName": "workspace_fuel",
+  "specsDir": "specs",
+  "graphDir": "graph",
+  "runsDir": "runs",
+  "graphs": {
+    "code": "graph/flypass-graph.json",
+    "specs": "graph/specs-graph.json"
+  },
+  "specs": {
+    "repoDirs": [
+      "backend-product-fuel-policy-enforcer/specs",
+      "backend-customer-account-drivers/specs",
+      "frontend-micro-fuel/specs"
+    ],
+    "frontendRepos": ["frontend-micro-fuel"]
+  },
+  "domainVocabulary": {
+    "entities": [
+      "fuelTransaction",
+      "fuelAuthorization",
+      "fuelPolicy",
+      "fuelDispenser",
+      "station",
+      "attentionPoint",
+      "driver",
+      "vehicle",
+      "subAccount",
+      "flykey",
+      "outbox"
+    ],
+    "conditions": [
+      { "key": "pagination", "pattern": "paginaci[oó]n|por\\s+carga|nextPageToken|page\\s*size" },
+      { "key": "empty_state", "pattern": "empty\\s+state|estado\\s+vac[ií]o" },
+      { "key": "skeleton_loader", "pattern": "skeleton" },
+      { "key": "dark_mode", "pattern": "dark\\s*mode" },
+      { "key": "kafka_event", "pattern": "kafka|t[oó]pico|outbox" },
+      { "key": "retry_resilience", "pattern": "reintento|retry|circuit\\s*breaker|resilience" },
+      { "key": "idempotency", "pattern": "idempoten" },
+      { "key": "qr_flow", "pattern": "\\bQR\\b" },
+      { "key": "daily_limit", "pattern": "l[ií]mite\\s+diario|daily\\s*limit|\\bcupo\\b" }
+    ]
+  },
+  "flow": {
+    "domain": "combustibles",
+    "parentEpic": null
+  },
+  "frontend": {
+    "mfeRoot": "frontend-micro-fuel",
+    "shellRoot": null,
+    "mfeAppsDirs": [
+      "frontend-micro-fuel/apps",
+      "frontend-micro-fuel/packages"
+    ],
+    "shellFeaturesDir": null,
+    "shellUiKitDir": null
+  },
+  "generic": {
+    "backendRoots": [
+      "backend-product-fuel-policy-enforcer/src",
+      "backend-customer-account-drivers/src"
+    ],
+    "frontendRoots": [
+      "frontend-micro-fuel/apps",
+      "frontend-micro-fuel/packages"
+    ],
+    "infrastructureRoots": [
+      "infrastructure",
+      "infra"
+    ],
+    "companionRoots": [
+      "companion_apps",
+      "scripts"
+    ]
+  },
+  "domains": {
+    "webApp": {
+      "path": "frontend-micro-fuel",
+      "graphLayer": "mfe"
+    },
+    "fuelBackend": {
+      "path": "backend-product-fuel-policy-enforcer",
+      "graphLayer": "backend"
+    },
+    "driversBackend": {
+      "path": "backend-customer-account-drivers",
+      "graphLayer": "backend"
+    }
+  },
+  "mcp": {
+    "configPath": ".cursor/mcp.json"
+  }
+}

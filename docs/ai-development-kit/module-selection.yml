@@ -1,0 +1,31 @@
+kit: modular_dev_ai_kit
+version: 0.1.0-foundation
+owner: "Combustibles / AI Platform"
+role: workspace_coordinator
+
+modules:
+  core:
+    enabled: true
+    reason: "Baseline — context, gates, templates"
+
+  backend_module:
+    enabled: false
+    reason: "Instalado en repos backend hijos, no en el coordinador"
+
+  frontend_module:
+    enabled: false
+    reason: "Instalado en frontend-micro-fuel, no en el coordinador"
+
+  graph_module:
+    enabled: true
+    reason: "Grafo multi-repo, specs/, kg-cli en workspace padre"
+
+child_repos:
+  - path: frontend-micro-fuel
+    modules: [core, frontend_module, graph_module]
+  - path: backend-product-fuel-policy-enforcer
+    modules: [core, backend_module, graph_module]
+  - path: backend-customer-account-drivers
+    modules: [core, backend_module, graph_module]
+
+local_profiles: []
