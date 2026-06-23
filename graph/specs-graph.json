@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "builtAt": "2026-06-17T23:26:57.314Z",
+  "builtAt": "2026-06-23T02:21:27.004Z",
   "workspace": "workspace_fuel",
   "domain": "combustibles",
   "parent": "FL2-25105",
@@ -19,9 +19,9 @@
       "frontend-micro-fuel": 2
     },
     "byStatus": {
-      "approved": 12,
+      "approved": 10,
       "implemented": 1,
-      "draft": 4
+      "draft": 6
     },
     "flows": [
       {
@@ -34,13 +34,14 @@
       },
       {
         "key": "b2b",
-        "specs": 7
+        "specs": 6
       }
     ],
     "specsWithoutFlow": [
       "SPEC-FL2-24307",
       "FPE-0003",
-      "0008_SPEC_fpe_full_tank_per_station"
+      "0008_SPEC_fpe_full_tank_per_station",
+      "0001_SPEC_outbox_table"
     ],
     "edges": 37,
     "byEdgeType": {
@@ -60,7 +61,9 @@
       "MFE-0000"
     ],
     "withoutFrontMatter": [
-      "0008_SPEC_fpe_full_tank_per_station"
+      "0008_SPEC_fpe_full_tank_per_station",
+      "0000_SPEC_project_context",
+      "0001_SPEC_outbox_table"
     ],
     "warnings": [],
     "files": [
@@ -147,7 +150,6 @@
         "FPE-0006",
         "FPE-0007",
         "FPE-0008",
-        "CAD-0001",
         "MFE-0001"
       ]
     }
@@ -340,6 +342,7 @@
         "fuelAuthorization",
         "fuelPolicy",
         "station",
+        "driver",
         "flykey"
       ],
       "endpoints": [
@@ -704,11 +707,11 @@
       "hasFrontMatter": false
     },
     {
-      "id": "CAD-0000",
+      "id": "0000_SPEC_project_context",
       "file": "backend-customer-account-drivers/specs/0000_SPEC_project_context.md",
-      "title": "Contexto base del proyecto customer-account-drivers",
+      "title": "0000_SPEC_project_context",
       "type": "context",
-      "status": "approved",
+      "status": "draft",
       "jira": null,
       "repo": "backend-customer-account-drivers",
       "repos": [
@@ -734,14 +737,14 @@
       "figmaWarnings": [],
       "requiresUi": false,
       "acceptanceCount": 0,
-      "hasFrontMatter": true
+      "hasFrontMatter": false
     },
     {
-      "id": "CAD-0001",
+      "id": "0001_SPEC_outbox_table",
       "file": "backend-customer-account-drivers/specs/0001_SPEC_outbox_table.md",
-      "title": "Patrón Transactional Outbox en customer-account-drivers",
+      "title": "0001_SPEC_outbox_table",
       "type": "technical",
-      "status": "approved",
+      "status": "draft",
       "jira": null,
       "repo": "backend-customer-account-drivers",
       "repos": [
@@ -749,9 +752,7 @@
       ],
       "refines": [],
       "dependsOn": [],
-      "flows": [
-        "b2b"
-      ],
+      "flows": [],
       "flowDefinitions": [],
       "entities": [
         "driver",
@@ -768,7 +769,7 @@
       "figmaWarnings": [],
       "requiresUi": false,
       "acceptanceCount": 0,
-      "hasFrontMatter": true
+      "hasFrontMatter": false
     },
     {
       "id": "MFE-0000",
@@ -1105,7 +1106,7 @@
     },
     {
       "from": "FPE-0004",
-      "to": "CAD-0001",
+      "to": "0001_SPEC_outbox_table",
       "type": "shares_entity",
       "attrs": {
         "entities": [
@@ -1148,7 +1149,7 @@
     },
     {
       "from": "FPE-0006",
-      "to": "CAD-0001",
+      "to": "0001_SPEC_outbox_table",
       "type": "shares_entity",
       "attrs": {
         "entities": [
@@ -1170,7 +1171,7 @@
     },
     {
       "from": "FPE-0007",
-      "to": "CAD-0001",
+      "to": "0001_SPEC_outbox_table",
       "type": "shares_entity",
       "attrs": {
         "entities": [
