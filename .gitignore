@@ -5,8 +5,9 @@ backend-customer-account-drivers/
 testing-api-combustiblesB2B/
 testing-e2e-combustiblesB2B/
 
-# Grafo semántico (generado — solo tmp se excluye, los JSON se commitean)
-graph/tmp/
+# Grafo semántico (generado — se regenera con kg-cli index)
+graph/*
+!graph/.gitkeep
 
 # Planes y evidencia de sesión (locales, no se comparten)
 runs/
